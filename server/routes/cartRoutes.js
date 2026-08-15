@@ -11,32 +11,23 @@ const {
 const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
-router.get(
-  "/",
-  protect,
-  getCart
-);
 
-router.post(
-  "/items",
-  protect,
-  addToCart
-);
+router.get("/", protect, getCart);
 
+router.post("/items", protect, addToCart);
 
 router.patch(
   "/items/:productId",
   protect,
   updateCartItem
 );
+
 router.delete(
   "/items/:productId",
   protect,
   removeCartItem
 );
-router.delete(
-  "/",
-  protect,
-  clearCart
-);
+
+router.delete("/", protect, clearCart);
+
 module.exports = router;
