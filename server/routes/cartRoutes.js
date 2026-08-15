@@ -4,7 +4,8 @@ const {
   getCart,
   addToCart,
   updateCartItem,
-  removeCartItem
+  removeCartItem,
+  clearCart
 } = require("../controller/cartController");
 
 const protect = require("../middleware/authMiddleware");
@@ -32,5 +33,10 @@ router.delete(
   "/items/:productId",
   protect,
   removeCartItem
+);
+router.delete(
+  "/",
+  protect,
+  clearCart
 );
 module.exports = router;

@@ -259,9 +259,40 @@ const removeCartItem = async (req, res) => {
     });
   }
 };
+
+const clearCart = async (req, res) => {
+  try {
+    const cart = await Cart.findOne({
+      user: req.user._id
+    });
+
+    if (!cart) {
+      return res.status(404).json({
+        message: "Cart not found"
+      });
+    }
+
+    cart.items = [];
+
+    await cart.save();
+
+    return res.status(200).json({
+      message: "Cart cleared successfully",
+      cart
+    });
+
+  } catch (error) {
+    console.error("Clear cart error:", error);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+};
 module.exports = {
   getCart,
   addToCart,
   updateCartItem,
-  removeCartItem
+  removeCartItem,
+  clearCart
 };
