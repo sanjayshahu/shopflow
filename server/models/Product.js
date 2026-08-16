@@ -8,39 +8,22 @@ const productSchema = new mongoose.Schema(
       trim: true
     },
 
-    description: {
-      type: String,
-      required: true,
-      trim: true
-    },
-
     price: {
       type: Number,
-      required: true,
-      min: 0
+      required: true
     },
 
     category: {
       type: String,
-      required: true,
-      trim: true
+      required: true
     },
 
     image: {
-      type: String,
-      default: ""
+      type: String
     },
 
     stock: {
       type: Number,
-      required: true,
-      min: 0,
-      default: 0
-    },
-
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
       required: true
     }
   },
@@ -49,4 +32,17 @@ const productSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Product", productSchema);
+// Indexes
+productSchema.index({
+  category: 1,
+  price: 1
+});
+
+productSchema.index({
+  createdAt: -1
+});
+
+module.exports = mongoose.model(
+  "Product",
+  productSchema
+);

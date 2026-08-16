@@ -172,8 +172,103 @@ const getOrderById = async (req, res) => {
     });
   }
 };
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "name email role")
+      .populate(
+        "items.product",
+        "name price image category"
+      )
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      count: orders.length,
+      orders
+    });
+
+  } catch (error) {
+    console.error("Get all orders error:", error);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+};
+
+const updateOrderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    const allowedStatuses = [
+      "pending",
+      "confirmed",
+      "shipped",
+      "delivered",
+      "cancelled"
+    ];
+
+    // Validate status exists
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid order status"
+      });
+    }
+
+    // Find order
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Order not found"
+      });
+    }
+
+    // Allowed state transitions
+    const allowedTransitions = {
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["shipped", "cancelled"],
+      shipped: ["delivered"],
+      delivered: [],
+      cancelled: []
+    };
+
+    const currentStatus = order.status;
+
+    // Check transition
+    if (
+      !allowedTransitions[currentStatus].includes(status)
+    ) {
+      return res.status(400).json({
+        message: `Cannot change order from ${currentStatus} to ${status}`
+      });
+    }
+
+    // Update
+    order.status = status;
+
+    await order.save();
+
+    return res.status(200).json({
+      message: "Order status updated successfully",
+      order
+    });
+
+  } catch (error) {
+    console.error("Update order status error:", error);
+
+    return res.status(500).json({
+      message: "Server error"
+    });
+  }
+};
 module.exports = {
   createOrder,
   getMyOrders,
-  getOrderById 
+  getOrderById,
+  getAllOrders,
+  updateOrderStatus
+  
+  
 };

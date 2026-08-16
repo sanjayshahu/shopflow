@@ -32,96 +32,135 @@ const getCart = async (req, res) => {
   }
 };
 const addToCart = async (req, res) => {
+  console.log("\n========== ADD TO CART CONTROLLER ==========");
+
   try {
     const { productId, quantity } = req.body;
 
-    // 1. Validate input
-    if (!productId) {
-      return res.status(400).json({
-        message: "Product ID is required"
-      });
-    }
+    console.log("User ID:", req.user._id);
+    console.log("Product ID:", productId);
+    console.log("Quantity:", quantity);
 
-    const requestedQuantity = Number(quantity);
+    // 1. Find product
+    console.log("Searching product in MongoDB...");
 
-    if (!Number.isInteger(requestedQuantity) || requestedQuantity < 1) {
-      return res.status(400).json({
-        message: "Quantity must be a positive integer"
-      });
-    }
-
-    // 2. Find product
     const product = await Product.findById(productId);
 
     if (!product) {
+      console.log("❌ Product not found");
+
       return res.status(404).json({
+        success: false,
         message: "Product not found"
       });
     }
 
-    // 3. Check stock
-    if (product.stock < requestedQuantity) {
+    console.log("✅ Product found:", {
+      id: product._id,
+      name: product.name,
+      price: product.price,
+      stock: product.stock
+    });
+
+    // 2. Check stock
+    if (product.stock < quantity) {
+      console.log("❌ Insufficient stock");
+
       return res.status(400).json({
+        success: false,
         message: `Only ${product.stock} items available`
       });
     }
 
-    // 4. Find user's cart
+    // 3. Find user's cart
+    console.log("Searching user's cart...");
+
     let cart = await Cart.findOne({
       user: req.user._id
     });
 
-    // 5. Create cart if it doesn't exist
+    // 4. Create cart if it doesn't exist
     if (!cart) {
+      console.log("Cart doesn't exist. Creating new cart...");
+
       cart = await Cart.create({
         user: req.user._id,
         items: []
       });
+
+      console.log("✅ Cart created:", cart._id);
+    } else {
+      console.log("✅ Existing cart found:", cart._id);
     }
 
-    // 6. Check whether product already exists in cart
+    // 5. Check if product already exists in cart
     const existingItem = cart.items.find(
       (item) => item.product.toString() === productId
     );
 
     if (existingItem) {
-      const newQuantity =
-        existingItem.quantity + requestedQuantity;
+      console.log("Product already exists in cart");
 
-      // Make sure combined quantity doesn't exceed stock
+      const newQuantity =
+        existingItem.quantity + quantity;
+
+      console.log("Existing quantity:", existingItem.quantity);
+      console.log("Requested quantity:", quantity);
+      console.log("New quantity:", newQuantity);
+
+      // Check combined quantity against stock
       if (newQuantity > product.stock) {
+        console.log("❌ Combined quantity exceeds stock");
+
         return res.status(400).json({
+          success: false,
           message: `Only ${product.stock} items available`
         });
       }
 
       existingItem.quantity = newQuantity;
+
+      console.log("✅ Cart item quantity updated");
+
     } else {
-      // 7. Add new item
+      console.log("Product not in cart. Adding new item...");
+
       cart.items.push({
         product: productId,
-        quantity: requestedQuantity
+        quantity
       });
+
+      console.log("✅ Product added to cart");
     }
 
-    // 8. Save cart
+    // 6. Save cart
+    console.log("Saving cart to MongoDB...");
+
     await cart.save();
 
-    // 9. Return populated cart
+    console.log("✅ Cart saved");
+
+    // 7. Populate product information
     await cart.populate({
       path: "items.product",
       select: "name price image stock category"
     });
 
+    console.log("✅ Cart populated");
+
+    // 8. Send response
     return res.status(200).json({
+      success: true,
       message: "Product added to cart",
       cart
     });
 
   } catch (error) {
-    console.error("Add to cart error:", error);
+    console.error("\n❌ ADD TO CART ERROR:");
+    console.error(error);
 
     return res.status(500).json({
+      success: false,
       message: "Server error"
     });
   }

@@ -68,6 +68,8 @@ const getProductById = async (req, res) => {
 //important
 const getProducts = async (req, res) => {
   try {
+    console.log("\n========== GET PRODUCTS ==========");
+
     const {
       search,
       category,
@@ -78,9 +80,15 @@ const getProducts = async (req, res) => {
       limit = 10
     } = req.query;
 
+    console.log("Query:", req.query);
+
+    // -------------------------
+    // Build filter
+    // -------------------------
+
     const filter = {};
 
-    // Search by product name
+    // Search
     if (search) {
       filter.name = {
         $regex: search,
@@ -88,12 +96,12 @@ const getProducts = async (req, res) => {
       };
     }
 
-    // Category filter
+    // Category
     if (category) {
       filter.category = category;
     }
 
-    // Price filter
+    // Price range
     if (minPrice || maxPrice) {
       filter.price = {};
 
@@ -106,44 +114,103 @@ const getProducts = async (req, res) => {
       }
     }
 
+    console.log("MongoDB filter:", filter);
+
+    // -------------------------
     // Pagination
+    // -------------------------
+
     const pageNumber = Math.max(Number(page), 1);
-    const limitNumber = Math.min(Math.max(Number(limit), 1), 100);
+    const limitNumber = Math.min(
+      Math.max(Number(limit), 1),
+      100
+    );
 
-    const skip = (pageNumber - 1) * limitNumber;
+    const skip =
+      (pageNumber - 1) * limitNumber;
 
+    // -------------------------
     // Sorting
-    let sortOption = { createdAt: -1 };
+    // -------------------------
+
+    let sortOption = {
+      createdAt: -1
+    };
 
     if (sort === "price_asc") {
-      sortOption = { price: 1 };
+      sortOption = {
+        price: 1
+      };
     }
 
     if (sort === "price_desc") {
-      sortOption = { price: -1 };
+      sortOption = {
+        price: -1
+      };
     }
+
+    if (sort === "newest") {
+      sortOption = {
+        createdAt: -1
+      };
+    }
+
+    if (sort === "oldest") {
+      sortOption = {
+        createdAt: 1
+      };
+    }
+
+    // -------------------------
+    // Database queries
+    // -------------------------
 
     const products = await Product.find(filter)
       .sort(sortOption)
       .skip(skip)
       .limit(limitNumber);
 
-    const totalProducts = await Product.countDocuments(filter);
+    const totalProducts =
+      await Product.countDocuments(filter);
+
+    // -------------------------
+    // Pagination information
+    // -------------------------
+
+    const totalPages = Math.ceil(
+      totalProducts / limitNumber
+    );
+
+    console.log("Products found:", products.length);
+    console.log("Total products:", totalProducts);
 
     return res.status(200).json({
-      products,
+      success: true,
+
+      count: products.length,
+
       pagination: {
         currentPage: pageNumber,
         limit: limitNumber,
         totalProducts,
-        totalPages: Math.ceil(totalProducts / limitNumber)
-      }
+        totalPages,
+        hasNextPage:
+          pageNumber < totalPages,
+        hasPreviousPage:
+          pageNumber > 1
+      },
+
+      products
     });
 
   } catch (error) {
-    console.error("Get products error:", error);
+    console.error(
+      "Get products error:",
+      error
+    );
 
     return res.status(500).json({
+      success: false,
       message: "Server error"
     });
   }
