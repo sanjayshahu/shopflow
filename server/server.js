@@ -11,6 +11,8 @@ const adminOrderRoutes = require("./routes/adminOrderRoutes");
 
 
 const errorHandler = require("./middleware/errorMiddleware");
+const paymentRoutes =
+  require("./routes/paymentRoutes");
 
 const app = express();
 
@@ -52,6 +54,11 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.use("/api/admin/orders", adminOrderRoutes);
+
+app.use(
+  "/api/payments",
+  paymentRoutes
+);
 
 // -------------------------
 // 404 handler

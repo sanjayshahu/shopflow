@@ -133,9 +133,126 @@ const updateOrderStatus = async (req, res) => {
     });
   }
 };
+const getOrderStats = async (req, res) => {
+  try {
+    console.log(
+      "\n========== ADMIN: ORDER STATS =========="
+    );
+
+    const stats = await Order.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid"
+        }
+      },
+
+      {
+        $group: {
+          _id: null,
+
+          totalOrders: {
+            $sum: 1
+          },
+
+          totalRevenue: {
+            $sum: "$totalAmount"
+          },
+
+          averageOrderValue: {
+            $avg: "$totalAmount"
+          }
+        }
+      }
+    ]);
+
+    const result = stats[0] || {
+      totalOrders: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0
+    };
+
+    return res.status(200).json({
+      success: true,
+      stats: result
+    });
+
+  } catch (error) {
+    console.error(
+      "Order stats error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+const getProductSales = async (req, res) => {
+  try {
+    const sales = await Order.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid"
+        }
+      },
+
+      {
+        $unwind: "$items"
+      },
+
+      {
+        $group: {
+          _id: "$items.product",
+
+          totalQuantity: {
+            $sum: "$items.quantity"
+          },
+
+          totalRevenue: {
+            $sum: {
+              $multiply: [
+                "$items.price",
+                "$items.quantity"
+              ]
+            }
+          }
+        }
+      },
+
+      {
+        $sort: {
+          totalRevenue: -1
+        }
+      },
+
+      {
+        $limit: 10
+      }
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      sales
+    });
+
+  } catch (error) {
+    console.error(
+      "Product sales error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
 
 
 module.exports = {
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+   getOrderStats,
+   getProductSales
 };

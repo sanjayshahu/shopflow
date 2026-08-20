@@ -2,7 +2,8 @@ const express = require("express");
 
 const {
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  getOrderStats
 } = require("../controller/adminOrderController");
 
 const protect = require("../middleware/authMiddleware");
@@ -22,6 +23,12 @@ router.patch(
   protect,
   admin,
   updateOrderStatus
+);
+router.get(
+  "/stats",
+  protect,
+  admin,
+  getOrderStats
 );
 
 module.exports = router;
