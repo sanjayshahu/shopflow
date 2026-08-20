@@ -4,8 +4,7 @@ const {
   createPayment
 } = require("../controller/paymentController");
 
-const protect =
-  require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
