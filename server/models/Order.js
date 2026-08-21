@@ -2,11 +2,20 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
+    // ==========================================
+    // USER
+    // ==========================================
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
     },
+
+
+    // ==========================================
+    // ORDER ITEMS
+    // ==========================================
 
     items: [
       {
@@ -16,14 +25,17 @@ const orderSchema = new mongoose.Schema(
           required: true
         },
 
+        // Snapshot of product name
         name: {
           type: String,
           required: true
         },
 
+        // Snapshot of price at time of purchase
         price: {
           type: Number,
-          required: true
+          required: true,
+          min: 0
         },
 
         quantity: {
@@ -34,13 +46,25 @@ const orderSchema = new mongoose.Schema(
       }
     ],
 
+
+    // ==========================================
+    // TOTAL
+    // ==========================================
+
     totalAmount: {
       type: Number,
-      required: true
+      required: true,
+      min: 0
     },
+
+
+    // ==========================================
+    // ORDER STATUS
+    // ==========================================
 
     status: {
       type: String,
+
       enum: [
         "pending",
         "processing",
@@ -48,35 +72,63 @@ const orderSchema = new mongoose.Schema(
         "delivered",
         "cancelled"
       ],
+
       default: "pending"
     },
 
+
+    // ==========================================
+    // PAYMENT STATUS
+    // ==========================================
+
     paymentStatus: {
       type: String,
+
       enum: [
         "pending",
         "paid",
         "failed",
         "refunded"
       ],
+
       default: "pending"
     },
 
-  razorpayOrderId: {
-  type: String,
-  default: null
-},
 
-paymentId: {
-  type: String,
-  default: null
-}
+    // ==========================================
+    // RAZORPAY ORDER ID
+    // ==========================================
+
+    razorpayOrderId: {
+      type: String,
+      default: null
+    },
+
+
+    // ==========================================
+    // RAZORPAY PAYMENT ID
+    // ==========================================
+
+    paymentId: {
+      type: String,
+      default: null
+    }
   },
+
+
+  // ==========================================
+  // TIMESTAMPS
+  // ==========================================
 
   {
     timestamps: true
   }
 );
+
+
+// ==========================================
+// MODEL
+// ==========================================
 
 module.exports = mongoose.model(
   "Order",
